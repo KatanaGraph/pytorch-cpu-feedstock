@@ -55,8 +55,6 @@ outputs:
         - ninja
         - protobuf {{ libprotobuf }}
         - make      # [linux]
-        - mpi4py
-        - openmpi
       host:
         # GPU requirements
         - cudnn                           # [cuda_compiler_version != "None"]
