@@ -85,6 +85,8 @@ outputs:
         - libuv
         - pkg-config  # [unix]
         - typing_extensions
+        - mpi4py
+        - openmpi
       run:
         - mkl {{ mkl }}     # [x86]
         - libblas * *_mkl   # [x86]
@@ -109,6 +111,8 @@ outputs:
         - typing_extensions
         # Need ninja to load C++ extensions
         - ninja
+        - mpi4py
+        - openmpi
       run_constrained:
         # These constraints ensure conflict between pytorch and
         # pytorch-cpu 1.1 which we built before conda-forge had GPU infrastructure
