@@ -314,11 +314,11 @@ Modifications from Katana Graph
 To fit the needs of Katana Graph, this repo has been modified to install Open MPI
 when building the PyTorch binaries. Use `build-locally.py` to build binaries for
 a particular dependency configuration, or `build-all.sh` to build all binaries.
-To shorten the process, use `katana_supported_configs.txt` as as input to
+To shorten the process, use `katana_supported_configs.txt` as an input to
 `build-all.sh` to build only the necessary binaries. Be aware that the
 configurations specified in the text file do not update with
 `conda-forge/pytorch-cpu-feedstock` and are therefore prone to growing out of
-date over time. Please modify the text file as the upstream repo is modified
+date over time. Please update the text file as the upstream repo is updated
 and to match the dependencies supported by Katana Graph.
 
 Feedstock Maintainers
