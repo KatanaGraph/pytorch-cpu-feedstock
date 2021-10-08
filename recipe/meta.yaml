@@ -27,8 +27,8 @@ build:
 outputs:
   - name: pytorch
     build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
-      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
+      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi  # [cuda_compiler_version != "None"]
+      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi                                      # [cuda_compiler_version == "None"]
       detect_binary_files_with_prefix: false
     script: build_pytorch.sh  # [not win]
     script: bld_pytorch.bat   # [win]
@@ -134,6 +134,8 @@ outputs:
         - pydot
         - mock  # [linux]
         - pip
+        - psutil
+        - pillow
       imports:
         - torch
       source_files:
@@ -152,12 +154,12 @@ outputs:
   {% set pytorch_cpu_gpu = "pytorch-gpu" %}   # [cuda_compiler_version != "None"]
   - name: {{ pytorch_cpu_gpu }}
     build:
-      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
-      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}                                      # [cuda_compiler_version == "None"]
+      string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi  # [cuda_compiler_version != "None"]
+      string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi                                      # [cuda_compiler_version == "None"]
       detect_binary_files_with_prefix: False
       # weigh down cpu implementation and give cuda preference
       track_features:
-        - pytorch-cpu                                      # [cuda_compiler_version == "None"]
+        - pytorch-openmpi
     requirements:
       run:
         - {{ pin_subpackage("pytorch", exact=True) }}

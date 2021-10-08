@@ -1,0 +1,5 @@
+linux_64_cuda_compiler_versionNonecudnnundefinednumpy1.18python3.8.____cpython
+linux_64_cuda_compiler_version10.2cudnn7numpy1.18python3.8.____cpython
+linux_64_cuda_compiler_version11.0cudnn8numpy1.18python3.8.____cpython
+linux_64_cuda_compiler_version11.1cudnn8numpy1.18python3.8.____cpython
+linux_64_cuda_compiler_version11.2cudnn8numpy1.18python3.8.____cpython
