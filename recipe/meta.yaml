@@ -21,20 +21,17 @@ source:
 build:
   number: 2
   run_exports:
-    - {{ pin_subpackage('pytorch_openmpi', max_pin='x.x.x') }}
+    - {{ pin_subpackage('pytorch', max_pin='x.x.x') }}
   skip: true  # [win]
 
 outputs:
-  - name: pytorch_openmpi
+  - name: pytorch
     build:
       string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi  # [cuda_compiler_version != "None"]
       string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi                                      # [cuda_compiler_version == "None"]
       detect_binary_files_with_prefix: false
     script: build_pytorch.sh  # [not win]
     script: bld_pytorch.bat   # [win]
-    track_features:
-      - pytorch-cpu                                      # [cuda_compiler_version == "None"]
-      - pytorch-gpu
     requirements:
       build:
         - python                                 # [build_platform != target_platform]
@@ -121,10 +118,10 @@ outputs:
         # pytorch-cpu 1.1 which we built before conda-forge had GPU infrastructure
         # built into place.
         # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/65
-        - pytorch-openmpi-cpu = {{ version }}  # [cuda_compiler_version == "None"]
-        - pytorch-openmpi-gpu = 99999999       # [cuda_compiler_version == "None"]
-        - pytorch-openmpi-gpu = {{ version }}  # [cuda_compiler_version != "None"]
-        - pytorch-openmpi-cpu = 99999999       # [cuda_compiler_version != "None"]
+        - pytorch-cpu = {{ version }}  # [cuda_compiler_version == "None"]
+        - pytorch-gpu = 99999999       # [cuda_compiler_version == "None"]
+        - pytorch-gpu = {{ version }}  # [cuda_compiler_version != "None"]
+        - pytorch-cpu = 99999999       # [cuda_compiler_version != "None"]
 
     test:
       requires:
@@ -153,8 +150,8 @@ outputs:
   # 2021/08/01, hmaarrfk
   # While this seems like a roundabout way of defining the package name
   # It helps the linter avoid errors on a package not having tests.
-  {% set pytorch_cpu_gpu = "pytorch-openmpi-cpu" %}   # [cuda_compiler_version == "None"]
-  {% set pytorch_cpu_gpu = "pytorch-openmpi-gpu" %}   # [cuda_compiler_version != "None"]
+  {% set pytorch_cpu_gpu = "pytorch-cpu" %}   # [cuda_compiler_version == "None"]
+  {% set pytorch_cpu_gpu = "pytorch-gpu" %}   # [cuda_compiler_version != "None"]
   - name: {{ pytorch_cpu_gpu }}
     build:
       string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi  # [cuda_compiler_version != "None"]
@@ -162,12 +159,10 @@ outputs:
       detect_binary_files_with_prefix: False
       # weigh down cpu implementation and give cuda preference
       track_features:
-        - pytorch-openmpi-cpu
         - pytorch-cpu                                      # [cuda_compiler_version == "None"]
-        - pytorch-gpu
     requirements:
       run:
-        - {{ pin_subpackage("pytorch-openmpi", exact=True) }}
+        - {{ pin_subpackage("pytorch", exact=True) }}
     test:
       imports:
         - torch
