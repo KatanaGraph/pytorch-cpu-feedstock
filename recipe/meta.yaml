@@ -159,7 +159,7 @@ outputs:
       detect_binary_files_with_prefix: False
       # weigh down cpu implementation and give cuda preference
       track_features:
-        - pytorch-cpu                                      # [cuda_compiler_version == "None"]
+        - pytorch-openmpi
     requirements:
       run:
         - {{ pin_subpackage("pytorch", exact=True) }}
