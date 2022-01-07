@@ -47,7 +47,7 @@ outputs:
         - git       # [not win]
         - m2-git    # [win]
         - ninja
-        - protobuf >={{ libprotobuf }}
+        - protobuf {{ libprotobuf }}
         - make      # [linux]
       host:
         # GPU requirements
@@ -60,7 +60,7 @@ outputs:
         # dataclasses is a backport of python 3.7 module
         - dataclasses   # [py==36]
         - pip
-        - setuptools
+        - setuptools <=58.2.0 py{{ python[0] }}{{ python[2] }}*
         - pyyaml
         - requests
         - future
