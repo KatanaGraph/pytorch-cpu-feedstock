@@ -1,0 +1,7 @@
+name: conda-builder
+channels:
+  - anaconda
+  
+dependencies:
+  - metis
+  - conda-build
