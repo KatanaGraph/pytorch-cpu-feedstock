@@ -1,11 +1,13 @@
 #! /usr/bin/env python3
 
 import subprocess
+from threading import Timer
 import os
+import signal
 import tempfile
-import yaml
 import argparse
 import re
+import warnings
 
 PACKAGES = {
     'torch': {
@@ -39,16 +41,23 @@ PACKAGES = {
     }
 }
 
-def run_command(command, shell=False, run=True):
-    if shell:
-        print('command: '+command)
-    else:
-        print('command: '+' '.join(command))
+def run_command(command, timeout=None, run=True):
+    command = 'exec '+command
+    print(command)
 
     if not run:
         return
 
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell)
+    def kill_proc(process, cancelled):
+        cancelled[0] = True
+        os.killpg(os.getpgid(process.pid), signal.SIGINT)
+
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, start_new_session=True)
+    timer = None
+    cancelled = [False]
+    if timeout is not None:
+        timer = Timer(timeout, kill_proc, [process, cancelled])
+        timer.start()
     while True:
         output = process.stdout.readline()
         if process.poll() is not None:
@@ -56,13 +65,14 @@ def run_command(command, shell=False, run=True):
         if output:
             print(output.strip().decode("utf-8"))
 
+    if timer is not None:
+        timer.cancel()
     _, stderr = process.communicate()
 
-    if process.returncode != 0:
+    if cancelled[0]:
+        warnings.warn("Command timed out: "+command, RuntimeWarning)
+    elif process.returncode != 0:
         raise RuntimeError(stderr.decode("utf-8"))
-
-def upload_package(path):
-    run_command('anaconda upload --user KatanaGraph -l test '+path+' --skip', shell=True)
 
 def find_file(root, pattern):
     result = None
@@ -92,102 +102,142 @@ def build_pytorch(args):
     config_dir = args.feedstock_dir+'.ci_support/'
     pattern = '^linux_64_.*cuda_compiler_version'+cuda+'.*python'+args.python
 
-    run_command(args.feedstock_dir+'/build-locally.py '+find_file(config_dir, pattern)[:-5], shell=True, run=True)
+    run_command(args.feedstock_dir+'/build-locally.py '+find_file(config_dir, pattern)[:-5], run=False)
 
     if cuda == 'None':
-        cuda = 'cpu'
+        cuda = 'cpu_'
     else:
         cuda = 'cuda'+cuda.replace('.', '')
 
     tarfile = find_file(args.feedstock_dir+"/build_artifacts/linux-64/", 'pytorch-'+PACKAGES['torch']['tag']+'-'+cuda+'py'+args.python.replace('.', '')+'.*_openmpi.*.bz2')
-    upload_package(args.feedstock_dir+"/build_artifacts/linux-64/"+tarfile)
+    destination_path = os.path.expanduser('~')+"/conda-bld/linux-64/"
+    run_command('cp '+args.feedstock_dir+"/build_artifacts/linux-64/"+tarfile+' '+destination_path)
     print("PyTorch built")
+    return(destination_path+tarfile)
 
 class GitClone:
-    # Downloads, modifies, and deletes repos
+    # Downloads, modifies, and builds repos
     def __init__(self, directory, package, output_folder):
         self.package = package
         self.directory = directory
-        run_command(['rm', '-rf', self.directory])
+        run_command('rm -rf '+self.directory)
         self.output_folder = output_folder
 
         tag = PACKAGES[package]['tag']
         if tag == '*':
             tag = 'master'
-        run_command(['git', 'clone', '-b', tag, PACKAGES[package]['url'], self.directory])
+        run_command('git clone -b '+tag+' '+PACKAGES[package]['url']+' '+self.directory)
         self.conda_dir = self.directory+PACKAGES[package]['conda_path']
+
+    def get_version(self):
+        meta = open(self.conda_dir+'meta.yaml', 'r')
+        lines = meta.readlines()
+
+        for line in lines:
+            index = line.find('version: ')
+            if index != -1:
+                return line[index+len('version: '):].strip()
+        raise RuntimeError("Version of package '"+self.package+"' not found.")
 
     def sed_extension(self):
         # remove defaults channel
-        run_command("sed -i 's: -c defaults::g' "+self.conda_dir+"build_conda.sh", shell=True)
+        run_command("sed -i 's: -c defaults::g' "+self.conda_dir+"build_conda.sh")
         # add katanagraph channel
-        run_command("sed -i 's:^conda build . :conda build "+self.conda_dir+" --override-channels -c katanagraph/label/test :g' "+self.conda_dir+"build_conda.sh", shell=True)
+        run_command("sed -i 's:^conda build . :conda build "+self.conda_dir+" --override-channels -c file\://"+os.path.expanduser('~')+"/conda-bld/linux-64/"+" :g' "+self.conda_dir+"build_conda.sh")
         # set the output folder
         # tests do not pass when changing the output folder directory
-        #run_command("sed -i 's:--output-folder.*$:--croot "+self.output_folder+" :g' "+self.conda_dir+"build_conda.sh", shell=True)
+        #run_command("sed -i 's:--output-folder.*$:--croot "+self.output_folder+" :g' "+self.conda_dir+"build_conda.sh")
         # require our version of pytorch
-        run_command("sed -i 's:pytorch==${TORCH_VERSION%.\*}.\*:pytorch==${TORCH_VERSION} \*_openmpi:g' "+self.conda_dir+"build_conda.sh", shell=True)
+        run_command("sed -i 's:pytorch==${TORCH_VERSION%.\*}.\*:pytorch==${TORCH_VERSION} \*_openmpi:g' "+self.conda_dir+"build_conda.sh")
         # append build string with '_openmpi'
-        run_command("sed -i '/string:/ s/$/_openmpi/g' "+self.conda_dir+"meta.yaml", shell=True)
+        run_command("sed -i '/string:/ s/$/_openmpi/g' "+self.conda_dir+"meta.yaml")
         # pytorch-sparse can use metis to install all functionality. Requires sudo
         if 'metis' in PACKAGES[self.package].keys() and PACKAGES[self.package]['metis']:
-            run_command(self.directory+'.github/workflows/metis.sh', shell=True)
+            run_command(self.directory+'.github/workflows/metis.sh')
         else:
-            run_command("sed -i 's/- WITH_METIS=1/- WITH_METIS=0/g' "+self.conda_dir+"meta.yaml", shell=True)
+            run_command("sed -i 's/- WITH_METIS=1/- WITH_METIS=0/g' "+self.conda_dir+"meta.yaml")
 
         # use mamba instead of conda
-        run_command("sed -i 's:conda build:mamba build:g' "+self.conda_dir+"build_conda.sh", shell=True)
+        run_command("sed -i 's:conda build:mamba build:g' "+self.conda_dir+"build_conda.sh")
 
     def sed_pyg(self):
         self.sed_extension()
-        # Require our version of extensions
+        # Require our build of extensions
         for package in ['cluster', 'scatter', 'sparse', 'spline-conv']:
-            run_command("sed -i 's:- pytorch-"+package+":- pytorch-"+package+" \* \*_openmpi:g' "+self.conda_dir+"meta.yaml", shell=True)
+            run_command("sed -i 's:- pytorch-"+package+":- pytorch-"+package+" \* \*_openmpi:g' "+self.conda_dir+"meta.yaml")
 
     def build(self, args):
-        cuda = 'cu'+args.cuda.replace('.', '')
-        run_command([self.conda_dir+'build_conda.sh', args.python, PACKAGES['torch']['tag'], cuda], run=True)
+        cuda = args.cuda.replace('.', '')
+        if cuda != 'cpu':
+            cuda = 'cu'+cuda
+        run_command(self.conda_dir+'build_conda.sh '+args.python+' '+PACKAGES['torch']['tag']+' '+cuda, run=False)
 
 def build_extension(package, args):
     # Relevent to non PyTorch or PyG packages
     print("Building extension "+package+" with pytorch_version="+PACKAGES['torch']['tag']+" and cuda_version="+args.cuda)
+    version = None
     with tempfile.TemporaryDirectory() as tmpdir:
         feedstock = GitClone(tmpdir, package, args.feedstock_dir+"/build_artifacts/linux-64/")
+        version = feedstock.get_version()
         feedstock.sed_extension()
         feedstock.build(args)
 
-    tarfile = find_file(os.path.expanduser('~')+"/conda-bld/linux-64/", 'pytorch-'+package+'.*py'+args.python.replace('.', '')+'_torch_'+PACKAGES['torch']['tag']+'_.*'+args.cuda.replace('.', '')+'_openmpi.*.bz2')
-    upload_package(os.path.expanduser('~')+"/conda-bld/linux-64/"+tarfile)
+    package_path = os.path.expanduser('~')+"/conda-bld/linux-64/"
+    tarfile = find_file(package_path, 'pytorch-'+package+'-'+version+'-py'+args.python.replace('.', '')+'_torch_'+PACKAGES['torch']['tag']+'_.*'+args.cuda.replace('.', '')+'_openmpi.tar.bz2')
     print("Extension "+package+" built")
+    return(package_path+tarfile)
 
 def build_pyg(args):
     print("Building PyG with pytorch_version="+PACKAGES['torch']['tag']+" and cuda_version="+args.cuda)
+    version = None
     with tempfile.TemporaryDirectory() as tmpdir:
         feedstock = GitClone(tmpdir, 'pyg', args.feedstock_dir+"/build_artifacts/linux-64/")
+        version = feedstock.get_version()
         feedstock.sed_pyg()
         feedstock.build(args)
 
-    tarfile = find_file(os.path.expanduser('~')+"/conda-bld/linux-64/", 'pyg.*py'+args.python.replace('.', '')+'_torch_'+PACKAGES['torch']['tag']+'_.*'+args.cuda.replace('.', '')+'_openmpi.*.bz2')
-    upload_package(os.path.expanduser('~')+"/conda-bld/linux-64/"+tarfile)
+    package_path = os.path.expanduser('~')+"/conda-bld/linux-64/"
+    tarfile = find_file(package_path, 'pyg-'+version+'-py'+args.python.replace('.', '')+'_torch_'+PACKAGES['torch']['tag']+'_.*'+args.cuda.replace('.', '')+'_openmpi.tar.bz2')
     print("PyG built")
+    return(package_path+tarfile)
 
 def build(config):
-    if 'torch' in config.package:
-        config.package.remove('torch')
-        build_pytorch(args)
+    package_locations = []
+    threw_error = True
+    try:
+        if 'torch' in config.package:
+            config.package.remove('torch')
+            package_locations.append(build_pytorch(args))
 
-    should_build_pyg = False
-    if 'pyg' in config.package:
-        config.package.remove('pyg')
-        should_build_pyg = True
+        should_build_pyg = False
+        if 'pyg' in config.package:
+            config.package.remove('pyg')
+            should_build_pyg = True
 
-    for extension in config.package:
-        build_extension(extension, args)
+        for extension in config.package:
+            package_locations.append(build_extension(extension, args))
 
-    if should_build_pyg:
-        build_pyg(args)
+        if should_build_pyg:
+            package_locations.append(build_pyg(args))
+
+        threw_error=False
+    finally:
+        if threw_error:
+            if len(package_locations) == 0:
+                print("No packages built before exiting.")
+            else:
+                print("\nBuild incomplete.\nThe following packages were built before exiting.")
+                for location in package_locations:
+                    print(location)
+                print()
+
 
     print("All packages built")
+    location_file = open(config.feedstock_dir+'/package_locations.txt', 'w')
+    for location in package_locations:
+        location_file.write(location+'\n')
+    location_file.close()
+    print("Package locations written to '"+config.feedstock_dir+"/package_locations.txt'")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Builds packages supporting PyG with OpenMPI')

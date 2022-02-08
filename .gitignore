@@ -1,4 +1,4 @@
 *.pyc
 
 build_artifacts
-*_tmp
+package_locations.txt
