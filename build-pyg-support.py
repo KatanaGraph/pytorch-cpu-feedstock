@@ -102,7 +102,7 @@ def build_pytorch(args):
     config_dir = args.feedstock_dir+'.ci_support/'
     pattern = '^linux_64_.*cuda_compiler_version'+cuda+'.*python'+args.python
 
-    run_command(args.feedstock_dir+'/build-locally.py '+find_file(config_dir, pattern)[:-5], run=False)
+    run_command(args.feedstock_dir+'/build-locally.py '+find_file(config_dir, pattern)[:-5])
 
     if cuda == 'None':
         cuda = 'cpu_'
@@ -170,7 +170,7 @@ class GitClone:
         cuda = args.cuda.replace('.', '')
         if cuda != 'cpu':
             cuda = 'cu'+cuda
-        run_command(self.conda_dir+'build_conda.sh '+args.python+' '+PACKAGES['torch']['tag']+' '+cuda, run=False)
+        run_command(self.conda_dir+'build_conda.sh '+args.python+' '+PACKAGES['torch']['tag']+' '+cuda)
 
 def build_extension(package, args):
     # Relevent to non PyTorch or PyG packages
