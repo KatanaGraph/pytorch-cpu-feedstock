@@ -201,20 +201,20 @@ def build_pyg(args):
     print("PyG built")
     return(package_path+tarfile)
 
-def build(config):
+def build(args):
     package_locations = []
     threw_error = True
     try:
-        if 'torch' in config.package:
-            config.package.remove('torch')
+        if 'torch' in args.package:
+            args.package.remove('torch')
             package_locations.append(build_pytorch(args))
 
         should_build_pyg = False
-        if 'pyg' in config.package:
-            config.package.remove('pyg')
+        if 'pyg' in args.package:
+            args.package.remove('pyg')
             should_build_pyg = True
 
-        for extension in config.package:
+        for extension in args.package:
             package_locations.append(build_extension(extension, args))
 
         if should_build_pyg:
@@ -233,11 +233,11 @@ def build(config):
 
 
     print("All packages built")
-    location_file = open(config.feedstock_dir+'/package_locations.txt', 'w')
+    location_file = open(args.feedstock_dir+'/package_locations.txt', 'w')
     for location in package_locations:
         location_file.write(location+'\n')
     location_file.close()
-    print("Package locations written to '"+config.feedstock_dir+"/package_locations.txt'")
+    print("Package locations written to '"+args.feedstock_dir+"/package_locations.txt'")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Builds packages supporting PyG with OpenMPI')
