@@ -1,0 +1,18 @@
+diff --git a/conda/pytorch-sparse/meta.yaml b/conda/pytorch-sparse/meta.yaml
+index 6099738..7ee355b 100644
+--- a/conda/pytorch-sparse/meta.yaml
++++ b/conda/pytorch-sparse/meta.yaml
+@@ -23,11 +23,11 @@ requirements:
+     - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+ 
+ build:
+-  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
++  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_openmpi
+   script_env:
+     - FORCE_CUDA
+     - TORCH_CUDA_ARCH_LIST
+-    - WITH_METIS=1
++    - WITH_METIS=0
+   preserve_egg_dir: True
+ 
+ test:
