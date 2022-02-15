@@ -71,7 +71,7 @@ def build_pytorch(args):
     pattern = (
         args.feedstock_dir / ".ci_support" / ("linux_64_*cuda_compiler_version" + cuda + "*python" + args.python + "*")
     )
-    run_command(str((args.feedstock_dir / "build-locally.py ").absolute()) + find_file(pattern)[:-5], run=False)
+    run_command(str((args.feedstock_dir / "build-locally.py ").absolute()) + find_file(pattern)[:-5])
 
     if cuda == "None":
         cuda = "cpu_"
@@ -135,8 +135,7 @@ class GitClone:
             cuda = "cu" + cuda
 
         run_command(
-            str(self.conda_dir / "build_conda.sh ") + args.python + " " + self.packages_meta.torch.tag + " " + cuda,
-            run=False,
+            str(self.conda_dir / "build_conda.sh ") + args.python + " " + self.packages_meta.torch.tag + " " + cuda
         )
 
 
