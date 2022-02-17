@@ -56,12 +56,16 @@ def build_pytorch(args):
 
     tarfile = None
     if args.cuda == "none":
-        run_command([
-            str((args.feedstock_dir / "build-locally.py").absolute()),
-            str(find_file(
-                args.feedstock_dir / ".ci_support", f"linux_64_*cuda_compiler_versionNone*python{args.python}*"
-            ).name)[:-5],
-        ])
+        run_command(
+            [
+                str((args.feedstock_dir / "build-locally.py").absolute()),
+                str(
+                    find_file(
+                        args.feedstock_dir / ".ci_support", f"linux_64_*cuda_compiler_versionNone*python{args.python}*"
+                    ).name
+                )[:-5],
+            ]
+        )
 
         tarfile = find_file(
             args.feedstock_dir / "build_artifacts" / "linux-64",
@@ -69,16 +73,22 @@ def build_pytorch(args):
         )
 
     else:
-        run_command([
-            str((args.feedstock_dir / "build-locally.py").absolute()),
-            str(find_file(
-                args.feedstock_dir / ".ci_support", f"linux_64_*cuda_compiler_version{args.cuda}*python{args.python}*"
-            ).name)[:-5],
-        ])
+        run_command(
+            [
+                str((args.feedstock_dir / "build-locally.py").absolute()),
+                str(
+                    find_file(
+                        args.feedstock_dir / ".ci_support",
+                        f"linux_64_*cuda_compiler_version{args.cuda}*python{args.python}*",
+                    ).name
+                )[:-5],
+            ]
+        )
 
         tarfile = find_file(
             args.feedstock_dir / "build_artifacts" / "linux-64",
-            f"pytorch-{PACKAGES_META['torch'].tag}-cuda{args.cuda.replace('.', '')}py{args.python.replace('.','')}*_openmpi.*.bz2",
+            f"pytorch-{PACKAGES_META['torch'].tag}-cuda{args.cuda.replace('.', '')}"
+            + f"py{args.python.replace('.','')}*_openmpi.*.bz2",
         )
 
     destination_path = pathlib.Path.home() / "conda-bld" / "linux-64/"
@@ -130,7 +140,14 @@ class GitClone:
         if args.cuda == "none":
             run_command([str(self.conda_dir / "build_conda.sh"), args.python, PACKAGES_META["torch"].tag, "cpu"])
         else:
-            run_command([str(self.conda_dir / "build_conda.sh"), args.python, PACKAGES_META["torch"].tag, f"cu{args.cuda.replace('.', '')}"])
+            run_command(
+                [
+                    str(self.conda_dir / "build_conda.sh"),
+                    args.python,
+                    PACKAGES_META["torch"].tag,
+                    f"cu{args.cuda.replace('.', '')}",
+                ]
+            )
 
 
 def build_package(package, args):
@@ -211,7 +228,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--python", type=str, help="The version of python used when building packages.", choices=[f"3.{i}" for i in range(0, 12)], required=True
+        "--python",
+        type=str,
+        help="The version of python used when building packages.",
+        choices=[f"3.{i}" for i in range(0, 12)],
+        required=True,
     )
 
     parser.add_argument(
