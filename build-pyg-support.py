@@ -100,6 +100,12 @@ def get_line_after_match(file, match):
 
 
 class GitClone:
+    """
+    An instance of this class represents a remote repo cloned to the specified
+    directory. It is recommended to use tmpfile with this class to both avoid
+    namespace errors, and allow the OS to handle directory removal.
+    """
+
     def __init__(self, directory, package):
         self.package = package
         self.directory = directory
