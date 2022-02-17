@@ -27,12 +27,11 @@ def run_command(command, run=True):
         return
 
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
-        while True:
-            output = process.stdout.readline()
+        for line in process.stdout:
             if process.poll() is not None:
                 break
-            if output:
-                print(output.strip().decode("utf-8"))
+            if line:
+                print(line.strip().decode("utf-8"))
 
         _, stderr = process.communicate()
 
@@ -49,42 +48,44 @@ def find_file(path, glob):
     if len(results) < 1:
         raise RuntimeError(f"No matches for glob '{str(glob)}' in path '{str(path)}'.")
 
-    return str(results[0].name)
+    return results[0]
 
 
 def build_pytorch(args):
     print(f"Building PyTorch using the current feedstock with cuda_version={args.cuda}")
 
-    args.python = "3.8"
-    cuda = args.cuda
-    if cuda == "none":
-        cuda = "None"
-
-    run_command(
-        [
+    tarfile = None
+    if args.cuda == "none":
+        run_command([
             str((args.feedstock_dir / "build-locally.py").absolute()),
-            find_file(
-                args.feedstock_dir / ".ci_support", f"linux_64_*cuda_compiler_version{cuda}*python{args.python}*"
-            )[:-5],
-        ],
-        run=False,
-    )
+            str(find_file(
+                args.feedstock_dir / ".ci_support", f"linux_64_*cuda_compiler_versionNone*python{args.python}*"
+            ).name)[:-5],
+        ])
 
-    if cuda == "None":
-        cuda = "cpu_"
+        tarfile = find_file(
+            args.feedstock_dir / "build_artifacts" / "linux-64",
+            f"pytorch-{PACKAGES_META['torch'].tag}-cpu_py{args.python.replace('.','')}*_openmpi.*.bz2",
+        )
+
     else:
-        cuda = "cuda" + cuda.replace(".", "")
+        run_command([
+            str((args.feedstock_dir / "build-locally.py").absolute()),
+            str(find_file(
+                args.feedstock_dir / ".ci_support", f"linux_64_*cuda_compiler_version{args.cuda}*python{args.python}*"
+            ).name)[:-5],
+        ])
 
-    tarfile = find_file(
-        args.feedstock_dir / "build_artifacts" / "linux-64",
-        f"pytorch-{PACKAGES_META['torch'].tag}-{cuda}py{args.python.replace('.','')}*_openmpi.*.bz2",
-    )
+        tarfile = find_file(
+            args.feedstock_dir / "build_artifacts" / "linux-64",
+            f"pytorch-{PACKAGES_META['torch'].tag}-cuda{args.cuda.replace('.', '')}py{args.python.replace('.','')}*_openmpi.*.bz2",
+        )
+
     destination_path = pathlib.Path.home() / "conda-bld" / "linux-64/"
-    shutil.copy(args.feedstock_dir / "build_artifacts" / "linux-64" / tarfile, destination_path)
+    shutil.copy(tarfile, destination_path)
 
-    print(destination_path / tarfile)
     print("PyTorch built")
-    return str(destination_path / tarfile)
+    return destination_path / tarfile.name
 
 
 def get_line_after_match(file, match):
@@ -126,13 +127,10 @@ class GitClone:
         os.chdir(args.feedstock_dir)
 
     def build(self, args):
-        cuda = args.cuda.replace(".", "")
-        if cuda != "none":
-            cuda = "cu" + cuda
+        if args.cuda == "none":
+            run_command([str(self.conda_dir / "build_conda.sh"), args.python, PACKAGES_META["torch"].tag, "cpu"])
         else:
-            cuda = "cpu"
-
-        run_command([str(self.conda_dir / "build_conda.sh"), args.python, PACKAGES_META["torch"].tag, cuda], run=False)
+            run_command([str(self.conda_dir / "build_conda.sh"), args.python, PACKAGES_META["torch"].tag, f"cu{args.cuda.replace('.', '')}"])
 
 
 def build_package(package, args):
@@ -146,17 +144,20 @@ def build_package(package, args):
 
     package_path = pathlib.Path.home().absolute() / "conda-bld" / "linux-64"
 
-    cuda = args.cuda.replace(".", "")
-    if cuda == "none":
-        cuda = "cpu"
-
-    tarfile = find_file(
-        package_path,
-        f"{PACKAGES_META[package].name}-{version}-py{args.python.replace('.', '')}"
-        + f"_torch_{PACKAGES_META['torch'].tag}_*{cuda}_openmpi.tar.bz2",
-    )
+    if args.cuda == "none":
+        tarfile = find_file(
+            package_path,
+            f"{PACKAGES_META[package].name}-{version}-py{args.python.replace('.', '')}"
+            + f"_torch_{PACKAGES_META['torch'].tag}_*cpu_openmpi.tar.bz2",
+        )
+    else:
+        tarfile = find_file(
+            package_path,
+            f"{PACKAGES_META[package].name}-{version}-py{args.python.replace('.', '')}"
+            + f"_torch_{PACKAGES_META['torch'].tag}_*{args.cuda.replace('.', '')}_openmpi.tar.bz2",
+        )
     print(f"Package {package} built")
-    return str(package_path / tarfile)
+    return tarfile
 
 
 def build(args):
@@ -192,7 +193,7 @@ def build(args):
     print("All packages built")
     with open(args.feedstock_dir / "package_locations.txt", "w") as location_file:
         for location in package_locations:
-            location_file.write(location + "\n")
+            location_file.write(f"{str(location)}\n")
     print(f"Package locations written to '{str(args.feedstock_dir)}/package_locations.txt'")
 
 
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--python", type=str, help="The version of python used when building packages.", choices=["3.8"], required=True
+        "--python", type=str, help="The version of python used when building packages.", choices=[f"3.{i}" for i in range(0, 12)], required=True
     )
 
     parser.add_argument(
@@ -224,7 +225,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--feedstock-dir",
         type=pathlib.Path,
-        help="The directory of pytorch-cpu-feedstock. Generally is the location of this file.",
+        help="The directory of 'pytorch-cpu-feedstock'. Generally is the location of this file.",
         default=pathlib.Path(__file__).parent.absolute(),
     )
 
