@@ -64,7 +64,7 @@ def build_pytorch(args):
                         args.feedstock_dir / ".ci_support", f"linux_64_*cuda_compiler_versionNone*python{args.python}*"
                     ).name
                 )[:-5],
-            ]
+            ],
         )
 
         tarfile = find_file(
@@ -132,11 +132,12 @@ class GitClone:
 
     def apply_patch(self, args):
         os.chdir(self.directory)
-        for patch in os.listdir(args.feedstock_dir / "pyg_support_patches" / self.package):
+        for patch in (args.feedstock_dir / "pyg_support_patches" / self.package).iterdir():
             run_command(["git", "apply", str(args.feedstock_dir / "pyg_support_patches" / self.package / patch)])
         os.chdir(args.feedstock_dir)
 
     def build(self, args):
+        os.chdir(self.conda_dir)
         if args.cuda == "none":
             run_command([str(self.conda_dir / "build_conda.sh"), args.python, PACKAGES_META["torch"].tag, "cpu"])
         else:
@@ -148,6 +149,7 @@ class GitClone:
                     f"cu{args.cuda.replace('.', '')}",
                 ]
             )
+        os.chdir(args.feedstock_dir)
 
 
 def build_package(package, args):
@@ -239,7 +241,7 @@ if __name__ == "__main__":
         "--cuda",
         type=str,
         help="The version of CUDA used when building packages.",
-        choices=["none", "10.2", "11.0", "11.1", "11.2"],
+        choices=["none", "10.1", "10.2", "11.1", "11.2", "11.3"],
         required=True,
     )
 
