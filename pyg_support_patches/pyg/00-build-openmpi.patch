@@ -1,0 +1,47 @@
+diff --git a/conda/pyg/build_conda.sh b/conda/pyg/build_conda.sh
+index 73df7414..25085517 100755
+--- a/conda/pyg/build_conda.sh
++++ b/conda/pyg/build_conda.sh
+@@ -4,7 +4,7 @@ export PYTHON_VERSION=$1
+ export TORCH_VERSION=$2
+ export CUDA_VERSION=$3
+ 
+-export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION%.*}.*"
++export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION} *_openmpi"
+ 
+ if [ "${CUDA_VERSION}" = "cpu" ]; then
+   export CONDA_CUDATOOLKIT_CONSTRAINT="cpuonly  # [not osx]"
+@@ -30,4 +30,4 @@ echo "PyTorch $TORCH_VERSION+$CUDA_VERSION"
+ echo "- $CONDA_PYTORCH_CONSTRAINT"
+ echo "- $CONDA_CUDATOOLKIT_CONSTRAINT"
+ 
+-conda build . -c nvidia -c pytorch -c pyg -c default -c conda-forge --output-folder "$HOME/conda-bld"
++conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c nvidia -c pytorch -c pyg -c default -c conda-forge --output-folder "$HOME/conda-bld"
+diff --git a/conda/pyg/meta.yaml b/conda/pyg/meta.yaml
+index 5f38c92a..76976a53 100644
+--- a/conda/pyg/meta.yaml
++++ b/conda/pyg/meta.yaml
+@@ -15,10 +15,10 @@ requirements:
+     - python {{ environ.get('PYTHON_VERSION') }}
+     - {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+     - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+-    - pytorch-scatter
+-    - pytorch-sparse
+-    - pytorch-cluster
+-    - pytorch-spline-conv
++    - pytorch-scatter * *_openmpi
++    - pytorch-sparse * *_openmpi
++    - pytorch-cluster * *_openmpi
++    - pytorch-spline-conv * *_openmpi
+     - networkx>=2.4
+     - tqdm
+     - jinja2
+@@ -33,7 +33,7 @@ requirements:
+     - numpy
+ 
+ build:
+-  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
++  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_openmpi
+   script: pip install .
+ 
+ test:

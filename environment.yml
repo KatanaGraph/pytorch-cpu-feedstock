@@ -1,0 +1,6 @@
+channels:
+  - anaconda
+  
+dependencies:
+  - conda-build
+  - anaconda-client
