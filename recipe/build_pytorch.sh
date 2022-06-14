@@ -6,7 +6,7 @@ set -ex
 rm -rf build
 
 # uncomment to debug cmake build
-#export CMAKE_VERBOSE_MAKEFILE=1
+export CMAKE_VERBOSE_MAKEFILE=1
 
 export CFLAGS="$(echo $CFLAGS | sed 's/-fvisibility-inlines-hidden//g')"
 export CXXFLAGS="$(echo $CXXFLAGS | sed 's/-fvisibility-inlines-hidden//g')"
@@ -19,8 +19,6 @@ export CFLAGS="$CFLAGS -Wno-deprecated-declarations"
 if [[ "$target_platform" == "osx-64" ]]; then
   export CXXFLAGS="$CXXFLAGS -DTARGET_OS_OSX=1"
   export CFLAGS="$CFLAGS -DTARGET_OS_OSX=1"
-  # workaround for SDK<10.13
-  sed -i.bak 's/UINT8_C(no)/no/g' third_party/ideep/mkl-dnn/src/cpu/x64/jit_avx512_core_amx_conv_kernel.cpp
 fi
 
 # Dynamic libraries need to be lazily loaded so that torch
@@ -28,7 +26,6 @@ fi
 LDFLAGS="${LDFLAGS//-Wl,-z,now/-Wl,-z,lazy}"
 
 export CMAKE_GENERATOR=Ninja
-export CMAKE_SYSROOT=$CONDA_BUILD_SYSROOT
 export CMAKE_LIBRARY_PATH=$PREFIX/lib:$PREFIX/include:$CMAKE_LIBRARY_PATH
 export CMAKE_PREFIX_PATH=$PREFIX
 for ARG in $CMAKE_ARGS; do
@@ -82,27 +79,22 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     exit 0
 fi
 
-# std=c++14 is required to compile some .cu files
-CPPFLAGS="${CPPFLAGS//-std=c++17/-std=c++14}"
-CXXFLAGS="${CXXFLAGS//-std=c++17/-std=c++14}"
-
 export MAX_JOBS=${CPU_COUNT}
 
 if [[ ${cuda_compiler_version} != "None" ]]; then
     export USE_CUDA=1
-    export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX"
     if [[ ${cuda_compiler_version} == 9.0* ]]; then
-        export TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH_LIST;6.0;7.0"
+        export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;7.0+PTX"
     elif [[ ${cuda_compiler_version} == 9.2* ]]; then
-        export TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH_LIST;6.0;6.1;7.0"
+        export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0+PTX"
     elif [[ ${cuda_compiler_version} == 10.* ]]; then
-        export TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH_LIST;6.0;6.1;7.0;7.5"
+        export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0;7.5+PTX"
     elif [[ ${cuda_compiler_version} == 11.0* ]]; then
-        export TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH_LIST;6.0;6.1;7.0;7.5;8.0"
+        export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0;7.5;8.0+PTX"
     elif [[ ${cuda_compiler_version} == 11.1 ]]; then
-        export TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH_LIST;6.0;6.1;7.0;7.5;8.0;8.6"
+        export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0;7.5;8.0;8.6+PTX"
     elif [[ ${cuda_compiler_version} == 11.2 ]]; then
-        export TORCH_CUDA_ARCH_LIST="$TORCH_CUDA_ARCH_LIST;6.0;6.1;7.0;7.5;8.0;8.6"
+        export TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0;7.5;8.0;8.6+PTX"
     else
         echo "unsupported cuda version. edit build_pytorch.sh"
         exit 1
@@ -125,6 +117,5 @@ else
 fi
 
 export CMAKE_BUILD_TYPE=Release
-export CMAKE_CXX_STANDARD=14
 
 $PYTHON -m pip install . --no-deps -vvv --no-clean

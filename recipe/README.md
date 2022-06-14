@@ -20,7 +20,6 @@ The following script may help build all cuda version sequentially:
 #!/usr/env/bin bash
 
 set -ex
-conda activate base
 
 docker system prune --force
 configs=$(find .ci_support/ -type f -name '*cuda_compiler_version[^nN]*' -printf "%p ")
@@ -43,4 +42,6 @@ for config_filename in $configs; do
     # docker images get quite big clean them up after each build to save your disk....
     docker system prune --force
 done
+
+zip build_artifacts/log_files.zip build_artifacts/*-log.txt
 ```

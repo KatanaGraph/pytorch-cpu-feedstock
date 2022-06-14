@@ -1,4 +1,9 @@
-{% set version = "1.10.1" %}
+{% set version = "1.11.0" %}
+{% set number = 2 %}
+
+{% if cuda_compiler_version != "None" %}
+{% set number = number + 200 %}
+{% endif %}
 
 package:
   name: pytorch-recipe
@@ -10,11 +15,11 @@ source:
   git_tag: v{{ version }}
   patches:
     - fix_dispatch_apply_auto.patch
+    # https://github.com/pytorch/pytorch/pull/78883
+    - link_blas_privately.patch
 
 build:
-  number: 0
-  run_exports:
-    - {{ pin_subpackage('pytorch', max_pin='x.x') }}
+  number: {{ number }}
   skip: true  # [win]
 
 outputs:
@@ -23,6 +28,8 @@ outputs:
       string: cuda{{ cuda_compiler_version | replace('.', '') }}py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi  # [cuda_compiler_version != "None"]
       string: cpu_py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}_openmpi                                      # [cuda_compiler_version == "None"]
       detect_binary_files_with_prefix: false
+      run_exports:
+        - {{ pin_subpackage('pytorch', max_pin='x.x') }}
     script: build_pytorch.sh  # [not win]
     script: bld_pytorch.bat   # [win]
     requirements:
@@ -42,7 +49,12 @@ outputs:
         - m2-git    # [win]
         - libgomp   # [linux]
         - llvm-openmp    # [osx]
-        - cmake
+        # 2022/04/12 hmaarrfk
+        # Issues with recent version of CMake
+        # https://github.com/pytorch/pytorch/issues/74985
+        # Should be fixed in other versions
+        # https://gitlab.kitware.com/cmake/cmake/-/issues/23368
+        - cmake  != 3.23.0
         - git       # [not win]
         - m2-git    # [win]
         - ninja
@@ -101,16 +113,15 @@ outputs:
         # other requirements
         - python
         - {{ pin_compatible('numpy') }}
-        - cffi
-        # if future isn't installed on python 3, `pip check` can give
-        # the user an error
-        - future
-        - typing_extensions
         - setuptools
+        - cffi
+        - typing_extensions
         # Need ninja to load C++ extensions
         - ninja
         - mpi4py
         - openmpi
+        # avoid that people without GPUs needlessly download ~0.5-1GB
+        - __cuda  # [cuda_compiler_version != "None"]
       run_constrained:
         # These constraints ensure conflict between pytorch and
         # pytorch-cpu 1.1 which we built before conda-forge had GPU infrastructure
@@ -144,6 +155,7 @@ outputs:
         # Run pip check so as to ensure that all pytorch packages are installed
         # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/24
         - pip check
+        - python -c "import torch; print(torch.__version__)"
 
   # 2021/08/01, hmaarrfk
   # While this seems like a roundabout way of defining the package name
