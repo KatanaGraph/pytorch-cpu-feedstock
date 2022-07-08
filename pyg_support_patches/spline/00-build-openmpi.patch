@@ -15,8 +15,8 @@ index 00f5123..b834c19 100755
  echo "- $CONDA_PYTORCH_CONSTRAINT"
  echo "- $CONDA_CUDATOOLKIT_CONSTRAINT"
  
--conda build . -c nvidia -c pytorch -c default -c conda-forge --output-folder "$HOME/conda-bld"
-+conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c nvidia -c pytorch -c conda-forge --output-folder "$HOME/conda-bld"
+-conda build . -c pytorch -c default -c nvidia --output-folder "$HOME/conda-bld"
++conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c pytorch -c conda-forge -c nvidia --output-folder "$HOME/conda-bld"
 diff --git a/conda/pytorch-spline-conv/meta.yaml b/conda/pytorch-spline-conv/meta.yaml
 index 2c0a6e4..27550a5 100644
 --- a/conda/pytorch-spline-conv/meta.yaml
