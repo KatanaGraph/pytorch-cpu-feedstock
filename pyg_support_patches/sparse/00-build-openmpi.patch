@@ -15,8 +15,8 @@ index ee8e780..d0491e3 100755
  echo "- $CONDA_PYTORCH_CONSTRAINT"
  echo "- $CONDA_CUDATOOLKIT_CONSTRAINT"
  
--conda build . -c pytorch -c nvidia -c pyg -c defaults -c conda-forge --output-folder "$HOME/conda-bld"
-+conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c pytorch -c nvidia -c pyg -c conda-forge --output-folder "$HOME/conda-bld"
+-conda build . -c pytorch -c pyg -c default -c nvidia --output-folder "$HOME/conda-bld"
++conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c pytorch -c pyg -c conda-forge -c nvidia --output-folder "$HOME/conda-bld"
 diff --git a/conda/pytorch-sparse/meta.yaml b/conda/pytorch-sparse/meta.yaml
 index 6099738..98d36c6 100644
 --- a/conda/pytorch-sparse/meta.yaml

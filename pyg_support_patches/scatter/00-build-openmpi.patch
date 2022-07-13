@@ -15,7 +15,7 @@ index 237482a..33c8bbf 100755
  echo "- $CONDA_PYTORCH_CONSTRAINT"
  echo "- $CONDA_CUDATOOLKIT_CONSTRAINT"
  
--conda build . -c defaults -c nvidia -c pytorch -c conda-forge --output-folder "$HOME/conda-bld"
+-conda build . -c nvidia -c pytorch -c default -c conda-forge --output-folder "$HOME/conda-bld"
 +conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c nvidia -c pytorch -c conda-forge --output-folder "$HOME/conda-bld"
 diff --git a/conda/pytorch-scatter/meta.yaml b/conda/pytorch-scatter/meta.yaml
 index cc2989a..7863bfb 100644

@@ -13,12 +13,12 @@ OUTPUT_DIR = pathlib.Path.home() / "conda-bld" / "linux-64/"
 
 PackageMeta = namedtuple("PackageMeta", ["name", "tag", "url"])
 PACKAGES_META = {
-    "torch": PackageMeta("torch", "1.10.1", None),
-    "cluster": PackageMeta("pytorch-cluster", "*", "https://github.com/rusty1s/pytorch_cluster.git"),
-    "scatter": PackageMeta("pytorch-scatter", "2.0.8", "https://github.com/rusty1s/pytorch_scatter.git"),
-    "sparse": PackageMeta("pytorch-sparse", "0.6.12", "https://github.com/rusty1s/pytorch_sparse.git"),
+    "torch": PackageMeta("torch", "1.11.0", None),
+    "cluster": PackageMeta("pytorch-cluster", "1.6.0", "https://github.com/rusty1s/pytorch_cluster.git"),
+    "scatter": PackageMeta("pytorch-scatter", "2.0.9", "https://github.com/rusty1s/pytorch_scatter.git"),
+    "sparse": PackageMeta("pytorch-sparse", "0.6.13", "https://github.com/rusty1s/pytorch_sparse.git"),
     "spline": PackageMeta("pytorch-spline-conv", "*", "https://github.com/rusty1s/pytorch_spline_conv.git"),
-    "pyg": PackageMeta("pyg", "2.0.1", "https://github.com/pyg-team/pytorch_geometric.git"),
+    "pyg": PackageMeta("pyg", "2.0.4", "https://github.com/pyg-team/pytorch_geometric.git"),
 }
 
 
