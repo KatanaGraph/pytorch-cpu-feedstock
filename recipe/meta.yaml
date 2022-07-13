@@ -77,7 +77,7 @@ outputs:
         # I'm not really inclined to patch this out since
         # this is a pretty easy build time dependency
         # https://github.com/pytorch/pytorch/issues/69894
-        - setuptools <59.6
+        - setuptools <=59.5
         - pyyaml
         - requests
         - future
@@ -113,7 +113,7 @@ outputs:
         # other requirements
         - python
         - {{ pin_compatible('numpy') }}
-        - setuptools
+        - setuptools <=59.5
         - cffi
         - typing_extensions
         # Need ninja to load C++ extensions
@@ -136,7 +136,7 @@ outputs:
       requires:
         - {{ compiler('c') }}
         - {{ compiler('cxx') }}
-        - setuptools
+        - setuptools <=59.5
         - hypothesis
         - pytest
         - tabulate
