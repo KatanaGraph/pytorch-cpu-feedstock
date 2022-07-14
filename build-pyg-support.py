@@ -101,7 +101,7 @@ def build_pytorch(args):
     shutil.copy(tarfile, OUTPUT_DIR)
 
     print("PyTorch built")
-    return destination_path / tarfile.name
+    return OUTPUT_DIR / tarfile.name
 
 
 def get_line_after_match(file, match):
