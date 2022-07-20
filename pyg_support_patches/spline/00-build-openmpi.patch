@@ -7,7 +7,7 @@ index 7dcdcab..11ba1a8 100755
  export CUDA_VERSION=$3
  
 -export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION%.*}.*"
-+export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION} *_openmpi"
++export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION} *1_openmpi"
  
  if [ "${CUDA_VERSION}" = "cpu" ]; then
    export CONDA_CUDATOOLKIT_CONSTRAINT="cpuonly  # [not osx]"
