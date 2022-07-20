@@ -9,14 +9,16 @@ import tempfile
 from collections import namedtuple
 from dataclasses import dataclass
 
+OUTPUT_DIR = pathlib.Path.home() / "conda-bld" / "linux-64/"
+
 PackageMeta = namedtuple("PackageMeta", ["name", "tag", "url"])
 PACKAGES_META = {
-    "torch": PackageMeta("torch", "1.10.1", None),
-    "cluster": PackageMeta("pytorch-cluster", "*", "https://github.com/rusty1s/pytorch_cluster.git"),
-    "scatter": PackageMeta("pytorch-scatter", "2.0.8", "https://github.com/rusty1s/pytorch_scatter.git"),
-    "sparse": PackageMeta("pytorch-sparse", "0.6.12", "https://github.com/rusty1s/pytorch_sparse.git"),
+    "torch": PackageMeta("torch", "1.11.0", None),
+    "cluster": PackageMeta("pytorch-cluster", "1.6.0", "https://github.com/rusty1s/pytorch_cluster.git"),
+    "scatter": PackageMeta("pytorch-scatter", "2.0.9", "https://github.com/rusty1s/pytorch_scatter.git"),
+    "sparse": PackageMeta("pytorch-sparse", "0.6.13", "https://github.com/rusty1s/pytorch_sparse.git"),
     "spline": PackageMeta("pytorch-spline-conv", "*", "https://github.com/rusty1s/pytorch_spline_conv.git"),
-    "pyg": PackageMeta("pyg", "2.0.1", "https://github.com/pyg-team/pytorch_geometric.git"),
+    "pyg": PackageMeta("pyg", "2.0.4", "https://github.com/pyg-team/pytorch_geometric.git"),
 }
 
 
@@ -37,6 +39,11 @@ def run_command(command, run=True):
 
         if process.returncode != 0:
             raise RuntimeError(stderr.decode("utf-8"))
+
+
+def check_or_make_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 def find_file(path, glob):
@@ -91,11 +98,10 @@ def build_pytorch(args):
             + f"py{args.python.replace('.','')}*_openmpi.*.bz2",
         )
 
-    destination_path = pathlib.Path.home() / "conda-bld" / "linux-64/"
-    shutil.copy(tarfile, destination_path)
+    shutil.copy(tarfile, OUTPUT_DIR)
 
     print("PyTorch built")
-    return destination_path / tarfile.name
+    return OUTPUT_DIR / tarfile.name
 
 
 def get_line_after_match(file, match):
@@ -161,17 +167,15 @@ def build_package(package, args):
         feedstock.apply_patch(args)
         feedstock.build(args)
 
-    package_path = pathlib.Path.home().absolute() / "conda-bld" / "linux-64"
-
     if args.cuda == "none":
         tarfile = find_file(
-            package_path,
+            OUTPUT_DIR,
             f"{PACKAGES_META[package].name}-{version}-py{args.python.replace('.', '')}"
             + f"_torch_{PACKAGES_META['torch'].tag}_*cpu_openmpi.tar.bz2",
         )
     else:
         tarfile = find_file(
-            package_path,
+            OUTPUT_DIR,
             f"{PACKAGES_META[package].name}-{version}-py{args.python.replace('.', '')}"
             + f"_torch_{PACKAGES_META['torch'].tag}_*{args.cuda.replace('.', '')}_openmpi.tar.bz2",
         )
@@ -180,6 +184,7 @@ def build_package(package, args):
 
 
 def build(args):
+    check_or_make_dir(OUTPUT_DIR)
     package_locations = []
     threw_error = True
     try:
