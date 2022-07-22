@@ -7,7 +7,7 @@ index 73df7414..dfdf1cda 100755
  export CUDA_VERSION=$3
  
 -export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION%.*}.*"
-+export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION} *1_openmpi"
++export CONDA_PYTORCH_CONSTRAINT="pytorch==${TORCH_VERSION} *2_openmpi"
  
  if [ "${CUDA_VERSION}" = "cpu" ]; then
    export CONDA_CUDATOOLKIT_CONSTRAINT="cpuonly  # [not osx]"
@@ -42,7 +42,7 @@ index 5f38c92a..28425a13 100644
  build:
 -  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
 +  number: 1
-+  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_openmpi
++  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_2_openmpi
    script: pip install .
  
  test:
