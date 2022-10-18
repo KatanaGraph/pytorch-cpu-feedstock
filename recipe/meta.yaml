@@ -1,5 +1,5 @@
-{% set version = "1.11.0" %}
-{% set number = 2 %}
+{% set version = "1.12.1" %}
+{% set number = 1 %}
 
 {% if cuda_compiler_version != "None" %}
 {% set number = number + 200 %}
@@ -14,9 +14,17 @@ source:
   git_url: https://github.com/pytorch/pytorch.git
   git_tag: v{{ version }}
   patches:
-    - fix_dispatch_apply_auto.patch
+    - patches/fix_dispatch_apply_auto.patch
+    # While this next patch has been accepted upstream, it doesn't seem to have
+    # made it for the 1.12.0 release
     # https://github.com/pytorch/pytorch/pull/78883
-    - link_blas_privately.patch
+    - patches/link_blas_privately.patch
+    - patches/osx-map_anonymous.patch
+    - patches/75001-fix_USE_MKLDNN.patch
+    # 2022/07 hmaarrfk
+    # We've patch out the bug in GCC that makes it incompatible
+    # https://github.com/conda-forge/ctng-compilers-feedstock/blob/7ea10c2526445beb9faff23efcc6bc40fc0079b5/recipe/meta.yaml#L23=
+    - patches/remove_gcc_maximum_requirements.patch 
 
 build:
   number: {{ number }}
@@ -55,10 +63,11 @@ outputs:
         # Should be fixed in other versions
         # https://gitlab.kitware.com/cmake/cmake/-/issues/23368
         - cmake  != 3.23.0
-        - git       # [not win]
-        - m2-git    # [win]
         - ninja
-        - protobuf {{ libprotobuf }}
+        # Keep libprotobuf here so that a compatibile version
+        # of protobuf is installed between build and host
+        - libprotobuf
+        - protobuf
         - make      # [linux]
       host:
         # GPU requirements
@@ -68,26 +77,16 @@ outputs:
         # other requirements
         - python
         - numpy
-        # dataclasses is a backport of python 3.7 module
-        - dataclasses   # [py==36]
         - pip
-        # hmaarrfk 2021/12/28
-        # it seems that pytorch uses some aspects of setuptools
-        # that were removed in version 59.6
-        # I'm not really inclined to patch this out since
-        # this is a pretty easy build time dependency
-        # https://github.com/pytorch/pytorch/issues/69894
-        - setuptools <59.6
+        - setuptools
         - pyyaml
         - requests
         - future
         - six
         - cffi
         - mkl-devel {{ mkl }}   # [x86]
-        - mkl {{ mkl }}         # [x86]
-        - libblas * *_mkl       # [x86]
-        - libblas               # [not x86]
-        - libblas               # [not x86]
+        - libcblas * *_mkl      # [x86]
+        - libcblas              # [not x86]
         - liblapack             # [not x86]
         - openblas              # [not x86]
         - libprotobuf
@@ -99,14 +98,7 @@ outputs:
         - mpi4py
         - openmpi
       run:
-        - mkl {{ mkl }}     # [x86]
-        - libblas * *_mkl   # [x86]
-        - libblas   # [not x86]
-        - libcblas   # [not x86]
-        - liblapack   # [not x86]
         - llvm-openmp    # [osx]
-        #- _pytorch_select ==0.1             # [cuda_compiler_version == "None"]
-        #- _pytorch_select ==0.2             # [cuda_compiler_version != "None"]
         # GPU requirements without run_exports
         - {{ pin_compatible('cudnn') }}                       # [cuda_compiler_version != "None"]
         - {{ pin_compatible('magma', max_pin='x.x.x') }}      # [cuda_compiler_version != "None"]
@@ -136,7 +128,6 @@ outputs:
       requires:
         - {{ compiler('c') }}
         - {{ compiler('cxx') }}
-        - setuptools
         - hypothesis
         - pytest
         - tabulate
@@ -156,6 +147,11 @@ outputs:
         # https://github.com/conda-forge/pytorch-cpu-feedstock/issues/24
         - pip check
         - python -c "import torch; print(torch.__version__)"
+        - python -c "import torch; assert torch.backends.mkldnn.m.is_available()"  # [x86 and cuda_compiler_version == "None"]
+        # At conda-forge, we target versions of OSX that are too old for MPS support
+        # But if users install a newer version of OSX, they will have MPS support
+        # https://github.com/conda-forge/pytorch-cpu-feedstock/pull/123#issuecomment-1186355073
+        # - python -c "import torch; assert torch.backends.mps.is_available()" # [osx]
 
   # 2021/08/01, hmaarrfk
   # While this seems like a roundabout way of defining the package name
@@ -181,7 +177,10 @@ about:
   home: https://pytorch.org/
   license: BSD-3-Clause
   license_family: BSD
-  license_file: LICENSE
+  license_file:
+    - LICENSE
+    - NOTICE
+    - third_party/pybind11/LICENSE
   summary: PyTorch is an optimized tensor library for deep learning using GPUs and CPUs.
 
 extra:
