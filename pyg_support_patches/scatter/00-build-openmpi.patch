@@ -1,5 +1,5 @@
 diff --git a/conda/pytorch-scatter/build_conda.sh b/conda/pytorch-scatter/build_conda.sh
-index 237482a..33c8bbf 100755
+index 00f5123..b834c19 100755
 --- a/conda/pytorch-scatter/build_conda.sh
 +++ b/conda/pytorch-scatter/build_conda.sh
 @@ -4,7 +4,7 @@ export PYTHON_VERSION=$1
@@ -11,22 +11,21 @@ index 237482a..33c8bbf 100755
  
  if [ "${CUDA_VERSION}" = "cpu" ]; then
    export CONDA_CUDATOOLKIT_CONSTRAINT="cpuonly  # [not osx]"
-@@ -30,4 +30,4 @@ echo "PyTorch $TORCH_VERSION+$CUDA_VERSION"
+@@ -33,4 +33,4 @@ echo "PyTorch $TORCH_VERSION+$CUDA_VERSION"
  echo "- $CONDA_PYTORCH_CONSTRAINT"
  echo "- $CONDA_CUDATOOLKIT_CONSTRAINT"
  
 -conda build . -c nvidia -c pytorch -c default -c conda-forge --output-folder "$HOME/conda-bld"
 +conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c nvidia -c pytorch -c conda-forge --output-folder "$HOME/conda-bld"
 diff --git a/conda/pytorch-scatter/meta.yaml b/conda/pytorch-scatter/meta.yaml
-index cc2989a..7863bfb 100644
+index 0b24e40..385c1fe 100644
 --- a/conda/pytorch-scatter/meta.yaml
 +++ b/conda/pytorch-scatter/meta.yaml
-@@ -21,7 +21,8 @@ requirements:
+@@ -21,7 +21,7 @@ requirements:
      - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
  
  build:
 -  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
-+  number: 1
 +  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_openmpi
    script: pip install .
    script_env:
