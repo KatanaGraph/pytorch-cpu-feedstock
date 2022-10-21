@@ -124,7 +124,7 @@ class GitClone:
         tag = PACKAGES_META[package].tag
         if tag == "*":
             tag = "master"
-        run_command(["git", "clone", "-b", tag, PACKAGES_META[package].url, str(self.directory)])
+        run_command(["git", "clone", "--recurse-submodules", "-b", tag, PACKAGES_META[package].url, str(self.directory)])
         self.conda_dir = self.directory / "conda" / PACKAGES_META[package].name
 
     def get_version(self):
@@ -167,13 +167,13 @@ def build_package(package, args):
         tarfile = find_file(
             package_path,
             f"{PACKAGES_META[package].name}-{version}-py{args.python.replace('.', '')}"
-            + f"_torch_{PACKAGES_META['torch'].tag}_*cpu_openmpi.tar.bz2",
+            + f"_torch_{PACKAGES_META['torch'].tag}_*cpu*_openmpi.tar.bz2",
         )
     else:
         tarfile = find_file(
             package_path,
             f"{PACKAGES_META[package].name}-{version}-py{args.python.replace('.', '')}"
-            + f"_torch_{PACKAGES_META['torch'].tag}_*{args.cuda.replace('.', '')}_openmpi.tar.bz2",
+            + f"_torch_{PACKAGES_META['torch'].tag}_*{args.cuda.replace('.', '')}*_openmpi.tar.bz2",
         )
     print(f"Package {package} built")
     return tarfile
