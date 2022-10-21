@@ -18,10 +18,10 @@ index 9ee00d29..ff336186 100755
 -conda build . -c pytorch -c pyg -c default -c nvidia --output-folder "$HOME/conda-bld"
 +conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c pytorch -c pyg -c conda-forge -c nvidia --output-folder "$HOME/conda-bld"
 diff --git a/conda/pyg/meta.yaml b/conda/pyg/meta.yaml
-index 82be0e8b..af58568f 100644
+index 82be0e8b..1db37c89 100644
 --- a/conda/pyg/meta.yaml
 +++ b/conda/pyg/meta.yaml
-@@ -14,9 +14,9 @@ requirements:
+@@ -14,9 +14,10 @@ requirements:
      - python {{ environ.get('PYTHON_VERSION') }}
      - {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
      - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
@@ -31,10 +31,11 @@ index 82be0e8b..af58568f 100644
 +    - pytorch-scatter * *_openmpi
 +    - pytorch-sparse * *_openmpi
 +    - pytorch-cluster * *_openmpi
++    - pytorch-spline-conv * *_openmpi
      - tqdm
      - jinja2
      - pyparsing
-@@ -26,7 +26,8 @@ requirements:
+@@ -26,7 +27,8 @@ requirements:
      - scikit-learn
  
  build:
