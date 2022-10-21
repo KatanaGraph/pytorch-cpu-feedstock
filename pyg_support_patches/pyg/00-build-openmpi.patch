@@ -18,7 +18,7 @@ index 9ee00d29..ff336186 100755
 -conda build . -c pytorch -c pyg -c default -c nvidia --output-folder "$HOME/conda-bld"
 +conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c pytorch -c pyg -c conda-forge -c nvidia --output-folder "$HOME/conda-bld"
 diff --git a/conda/pyg/meta.yaml b/conda/pyg/meta.yaml
-index 82be0e8b..0ef2a538 100644
+index 82be0e8b..af58568f 100644
 --- a/conda/pyg/meta.yaml
 +++ b/conda/pyg/meta.yaml
 @@ -14,9 +14,9 @@ requirements:
@@ -34,12 +34,13 @@ index 82be0e8b..0ef2a538 100644
      - tqdm
      - jinja2
      - pyparsing
-@@ -26,7 +26,7 @@ requirements:
+@@ -26,7 +26,8 @@ requirements:
      - scikit-learn
  
  build:
 -  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
-+  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_openmpi
++  number: 0
++  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_{{ PKG_BUILDNUM }}_openmpi
    script: pip install .
  
  test:

@@ -22,15 +22,16 @@ index 7dcdcab..325cb7b 100755
 -fi
 +conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c pytorch -c conda-forge -c nvidia --output-folder "$HOME/conda-bld"
 diff --git a/conda/pytorch-sparse/meta.yaml b/conda/pytorch-sparse/meta.yaml
-index 01cdad5..de75ce9 100644
+index 01cdad5..ea4c642 100644
 --- a/conda/pytorch-sparse/meta.yaml
 +++ b/conda/pytorch-sparse/meta.yaml
-@@ -23,11 +23,11 @@ requirements:
+@@ -23,11 +23,12 @@ requirements:
      - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
  
  build:
 -  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
-+  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_openmpi
++  number: 0
++  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_{{ PKG_BUILDNUM }}_openmpi
    script_env:
      - FORCE_CUDA
      - TORCH_CUDA_ARCH_LIST

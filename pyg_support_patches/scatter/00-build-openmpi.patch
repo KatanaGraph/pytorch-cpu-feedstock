@@ -18,15 +18,16 @@ index 00f5123..b834c19 100755
 -conda build . -c nvidia -c pytorch -c default -c conda-forge --output-folder "$HOME/conda-bld"
 +conda build . --override-channels -c "$HOME/conda-bld" -c katanagraph -c nvidia -c pytorch -c conda-forge --output-folder "$HOME/conda-bld"
 diff --git a/conda/pytorch-scatter/meta.yaml b/conda/pytorch-scatter/meta.yaml
-index 0b24e40..385c1fe 100644
+index 0b24e40..568f64b 100644
 --- a/conda/pytorch-scatter/meta.yaml
 +++ b/conda/pytorch-scatter/meta.yaml
-@@ -21,7 +21,7 @@ requirements:
+@@ -21,7 +21,8 @@ requirements:
      - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
  
  build:
 -  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
-+  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_openmpi
++  number: 0
++  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}_{{ PKG_BUILDNUM }}_openmpi
    script: pip install .
    script_env:
      - FORCE_CUDA
